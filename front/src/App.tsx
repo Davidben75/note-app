@@ -5,6 +5,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import EditNote from './pages/EditNote';
 import NewNote from './pages/NewNote';
+import {v4 as uuidV4} from 'uuid'
 
 export type Note = {
   id : string
@@ -36,8 +37,9 @@ export type RawNoteData = {
 
 function App() {
 
-  const [notes, setNotes] = useLocalStorage<RawNote[]>('NOTES', []);
+  const [notes, setNotes] = useLocalStorage<RawNote[]>('NOTES' , [])
   const [tags, setTags] = useLocalStorage<Tag[]>('TAGS', [])
+ 
 
   // The useMemo hook takes two arguments:
   // The first argument is a function that computes the memoized value.
@@ -46,16 +48,27 @@ function App() {
   const noteWithTags = useMemo(() => {
     return notes.map(note => {
       // it maps over each note in the notes array and creates a new object for each note. The new object includes all properties of the original note (...note) and adds a tags property.
-      return {...note, tags : tags.filter(tag => note.tagIds.includes(tag.id))}
+        return {...note, tags : tags.filter(tag => note.tagIds.includes(tag.id))}
       // it maps over each note in the notes array and creates a new object for each note. The new object includes all properties of the original note (...note) and adds a tags property.
     })
   }, [tags, notes])
+
+  function onCreateNote ({tags , ...data} : NoteData) {
+    setNotes(prev => [
+      ...prev, 
+      {...data , id : uuidV4(), tagIds : tags.map(tag => tag.id) }
+    ])
+  }
+
+  function addTag (newTag : Tag){
+    setTags(prev => [...prev, newTag])
+  }
 
   return (
     <Container className='my-4'>
       <Routes>
       <Route path='/' element={<h1>Hello</h1>}/>
-      <Route path='/new' element={ <NewNote/> }/>
+      <Route path='/new' element={ <NewNote onSubmit={onCreateNote} onAddTag={addTag} availableTags={tags}/>}/>
 
       <Route path='/:id'>
         <Route index element={<h1>Show</h1>}/>
